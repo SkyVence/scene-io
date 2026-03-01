@@ -238,7 +238,7 @@ std::vector<Token> lexer(std::istream& in, ErrorCollector& errors)
 			advance();
 		}
 	}
-	tokens.push_back((Token){TokenType::END_OF_FILE, "", line, column});
+	tokens.push_back(Token{TokenType::END_OF_FILE, "", line, column});
 	return tokens;
 }
 
@@ -273,7 +273,7 @@ void print_tokens(const std::vector<Token>& tokens)
 
 const std::string getTokenContent(Token& tok)
 {
-	switch (tok.type)
+		switch (tok.type)
 	{
 		case TokenType::TAG_OPEN: return "<";
 		case TokenType::TAG_END_OPEN: return "</";
@@ -285,6 +285,7 @@ const std::string getTokenContent(Token& tok)
 		case TokenType::STRING: return "string: " + std::string("\"") + tok.value + std::string("\"");
 		case TokenType::TEXT: return "text: " + std::string("\"") + tok.value + std::string("\"");
 	}
+	return "";
 }
 
 }

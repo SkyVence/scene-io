@@ -6,6 +6,7 @@
 #include <charconv>
 #include <filesystem>
 #include <algorithm>
+#include <fstream>
 
 namespace sceneIO::tdr {
 
@@ -70,14 +71,19 @@ std::string isValidFilePath(const std::string& pathStr)
 		return "Invalid file path: not a regular file";
 	}
 
+	#if defined(_WIN32) || defined(_WIN64)
+		std::ifstream in(path, std::ios::in | std::ios::binary);
+		if (!in.is_open()) return "Invalid file path: permission denied";
+	#else
 	fs::perms p = fs::status(path, ec).permissions();
 	if (ec) return "Invalid file path: " + ec.message();
 
 	bool readable = (p & fs::perms::owner_read) != fs::perms::none
-				 || (p & fs::perms::group_read) != fs::perms::none
-				 || (p & fs::perms::others_read) != fs::perms::none;
+					 || (p & fs::perms::group_read) != fs::perms::none
+					 || (p & fs::perms::others_read) != fs::perms::none;
 
 	if (!readable) return "Invalid file path: permission denied";
+	#endif
 
 	return "";
 }

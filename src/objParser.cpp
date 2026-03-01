@@ -242,8 +242,8 @@ namespace sceneIO::parser
 		std::vector<vec3> normal; normal.reserve(1024);
 		std::vector<vec2> uv;     uv.reserve(1024);
 
-		uint32_t currentMeshID = -1;
-		uint32_t currentSubMeshID = -1;
+		uint32_t currentMeshID = UINT32_MAX;
+		uint32_t currentSubMeshID = UINT32_MAX;
 		std::string currentMaterial = "default";
 
 		std::unordered_map<VertexKey, uint32_t> vertexMap;
@@ -268,31 +268,31 @@ namespace sceneIO::parser
 				}
 				else if (std::strncmp(line, "o ", 2) == 0)
 				{
-					asset.meshes_.value().push_back(std::make_unique<Mesh>(std::string(line + 2)));
+					asset.meshes_.push_back(std::make_unique<Mesh>(std::string(line + 2)));
 					currentMeshID++;
-					currentSubMeshID = -1;
+					currentSubMeshID = UINT32_MAX;
 					vertexMap.clear();
 				}
 				else if (std::strncmp(line, "usemtl ", 7) == 0)
 				{
 					currentMaterial = std::string(line + 7);
 
-					if (currentMeshID < 0) continue;
+					if (currentMeshID == UINT32_MAX) continue;
 
-					asset.meshes_.value()[currentMeshID]->subMeshes_.push_back(std::make_unique<SubMesh>(currentMaterial));
+					asset.meshes_[currentMeshID]->subMeshes_.push_back(std::make_unique<SubMesh>(currentMaterial));
 					currentSubMeshID++;
 				}
 				else if (std::strncmp(line, "f ", 2) == 0)
 				{
-					if (currentMeshID < 0)
+					if (currentMeshID == UINT32_MAX)
 					{
-						asset.meshes_.value().push_back(std::make_unique<Mesh>("Default"));
+						asset.meshes_.push_back(std::make_unique<Mesh>("Default"));
 						currentMeshID++;
-						currentSubMeshID = -1;
+						currentSubMeshID = UINT32_MAX;
 					}
-					if (currentSubMeshID < 0)
+					if (currentSubMeshID == UINT32_MAX)
 					{
-						asset.meshes_.value()[currentMeshID]->subMeshes_.push_back(std::make_unique<SubMesh>(currentMaterial));
+						asset.meshes_[currentMeshID]->subMeshes_.push_back(std::make_unique<SubMesh>(currentMaterial));
 						currentSubMeshID++;
 					}
 
@@ -320,7 +320,7 @@ namespace sceneIO::parser
 
 						if (vert == vertexMap.end())
 						{
-							realIndex = asset.meshes_.value()[currentMeshID]->vertices_.size();
+							realIndex = asset.meshes_[currentMeshID]->vertices_.size();
 							Vertex finalVertex;
 							try
 							{
@@ -341,7 +341,7 @@ namespace sceneIO::parser
 								throw ObjParseError("Invalid index it the face");
 							}
 							
-							asset.meshes_.value()[currentMeshID]->vertices_.push_back(finalVertex);
+							asset.meshes_[currentMeshID]->vertices_.push_back(finalVertex);
 							vertexMap[*vertexKeyIt] = realIndex;
 						}
 						else realIndex = vert->second;
@@ -349,22 +349,22 @@ namespace sceneIO::parser
 						faceVertexIndexes.push_back(realIndex);
 					}
 
-					vec3 faceNormal = vec3::cross(asset.meshes_.value()[currentMeshID]->vertices_[faceVertexIndexes[1]].pos - asset.meshes_.value()[currentMeshID]->vertices_[faceVertexIndexes[0]].pos,
-												  asset.meshes_.value()[currentMeshID]->vertices_[faceVertexIndexes[2]].pos - asset.meshes_.value()[currentMeshID]->vertices_[faceVertexIndexes[0]].pos).normalized();
+					vec3 faceNormal = vec3::cross(asset.meshes_[currentMeshID]->vertices_[faceVertexIndexes[1]].pos - asset.meshes_[currentMeshID]->vertices_[faceVertexIndexes[0]].pos,
+												  asset.meshes_[currentMeshID]->vertices_[faceVertexIndexes[2]].pos - asset.meshes_[currentMeshID]->vertices_[faceVertexIndexes[0]].pos).normalized();
 
 					if (faceMissingNormal)
 					{
 						for (auto vertexIt = faceVertexIndexes.begin(); vertexIt != faceVertexIndexes.end(); vertexIt++)
 						{
-							if (asset.meshes_.value()[currentMeshID]->vertices_[*vertexIt].normal == vec3(0))
-								asset.meshes_.value()[currentMeshID]->vertices_[*vertexIt].normal = faceNormal;
+							if (asset.meshes_[currentMeshID]->vertices_[*vertexIt].normal == vec3(0))
+								asset.meshes_[currentMeshID]->vertices_[*vertexIt].normal = faceNormal;
 						}
 					}
 
-					if (vec3::dot(asset.meshes_.value()[currentMeshID]->vertices_[faceVertexIndexes[0]].normal, faceNormal) < 0)
+					if (vec3::dot(asset.meshes_[currentMeshID]->vertices_[faceVertexIndexes[0]].normal, faceNormal) < 0)
 						faceNormal = -faceNormal;
 
-					earClipping(asset.meshes_.value()[currentMeshID]->vertices_, faceVertexIndexes, asset.meshes_.value()[currentMeshID]->subMeshes_[currentSubMeshID]->indices_, faceNormal);
+					earClipping(asset.meshes_[currentMeshID]->vertices_, faceVertexIndexes, asset.meshes_[currentMeshID]->subMeshes_[currentSubMeshID]->indices_, faceNormal);
 				}
 			}
 
