@@ -3,7 +3,10 @@
 #include "tdr/semanticAnalyzer.hpp"
 #include "logger.hpp"
 
+#include <cstdint>
 #include <iomanip>
+#include <string>
+#include <optional>
 
 namespace sceneIO::tdr {
 
